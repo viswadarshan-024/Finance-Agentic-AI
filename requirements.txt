@@ -1,0 +1,7 @@
+# requirements.txt
+streamlit==1.32.0
+langchain==0.1.13
+yfinance==0.2.33
+duckduckgo-search==4.1.0
+groq==0.4.1
+python-dotenv==1.0.0
