@@ -1,7 +1,35 @@
-# requirements.txt
+# Core Python Libraries
 streamlit==1.32.0
-langchain==0.1.13
-yfinance==0.2.33
-duckduckgo-search==4.1.0
-groq==0.4.1
 python-dotenv==1.0.0
+
+# Financial Data Libraries
+yfinance==0.2.33
+pandas==2.2.1
+numpy==1.26.4
+
+# Web Search and Networking
+duckduckgo-search==4.1.0
+requests==2.31.0
+
+# AI and Machine Learning
+langchain==0.1.13
+groq==0.4.1
+
+# Optional but Recommended for Advanced Features
+openai==1.13.3
+tiktoken==0.6.0
+
+# Data Visualization (Optional)
+matplotlib==3.8.3
+seaborn==0.13.2
+
+# Additional Utilities
+typing-extensions==4.10.0
+
+# Development and Debugging
+pytest==8.0.2
+black==24.3.0
+flake8==7.0.0
+
+# Security
+cryptography==42.0.5
