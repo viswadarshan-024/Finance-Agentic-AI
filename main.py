@@ -13,14 +13,14 @@ class FinanceAgentApp:
     def __init__(self):
         # Initialize Groq client
         self.groq_client = Groq(
-            api_key="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"
+            api_key=os.getenv('GROQ_API_KEY')
         )
         
         # Initialize Google Search client
         self.google_search_client = build(
             "customsearch", 
             "v1", 
-            developerKey="AIzaSyDU6JzVGBpJCLei7fHDXH6aiDVpjE--3MQ"
+            developerKey=os.getenv('GOOGLE_SEARCH_API_KEY')
         )
 
     def google_grounded_search(self, query, num_results=5):
@@ -36,7 +36,7 @@ class FinanceAgentApp:
             # Perform search with advanced parameters
             search_results = self.google_search_client.cse().list(
                 q=query,
-                cx="14d4c743d876041d1",
+                cx=os.getenv('GOOGLE_SEARCH_ENGINE_ID'),
                 num=num_results,
                 sort='date',  # Sort by date to get recent results
                 # Optional: restrict to specific domains for financial information
