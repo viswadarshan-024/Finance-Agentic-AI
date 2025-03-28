@@ -25,6 +25,53 @@ class FinanceIntelligenceApp:
         except Exception as e:
             st.error(f"Client Initialization Error: {e}")
 
+    def render_sidebar(self):
+        """
+        Create an informative sidebar with application details and usage guide
+        """
+        st.sidebar.title("🚀 Finance Intelligence Pro")
+        
+        st.sidebar.markdown("""
+        ## About the App
+        An AI-powered financial research tool that provides:
+        - Real-time stock information
+        - Comprehensive market insights
+        - AI-generated financial analysis
+        """)
+        
+        st.sidebar.markdown("### 🔍 How to Use")
+        st.sidebar.markdown("""
+        1. Enter a stock ticker (e.g., AAPL, GOOGL)
+        2. Click "Analyze Stocks"
+        3. View detailed financial insights
+        """)
+        
+        st.sidebar.markdown("### 💡 Example Tickers")
+        example_tickers = [
+            "AAPL (Apple)", 
+            "GOOGL (Google)", 
+            "MSFT (Microsoft)", 
+            "AMZN (Amazon)", 
+            "NVDA (NVIDIA)"
+        ]
+        for ticker in example_tickers:
+            st.sidebar.markdown(f"- {ticker}")
+        
+        st.sidebar.markdown("### ℹ️ Key Features")
+        features = [
+            "Real-time stock data retrieval",
+            "AI-powered market analysis",
+            "Interactive price trend charts",
+            "Web search insights"
+        ]
+        for feature in features:
+            st.sidebar.markdown(f"- {feature}")
+        
+        st.sidebar.markdown("""
+        ---
+        *Powered by Groq, Google Search, and Yahoo Finance*
+        """)
+
     def get_stock_info(self, ticker):
         """
         Comprehensive stock information retrieval
@@ -166,13 +213,32 @@ Analysis Requirements:
             stock = yf.Ticker(ticker)
             hist = stock.history(period="1y")
             
-            # Create interactive line chart
+            # Create interactive line chart with enhanced styling
             fig = px.line(
                 hist, 
                 x=hist.index, 
                 y='Close', 
-                title=f'{ticker} Stock Price Trend',
+                title=f'{ticker} Stock Price Trend (Past Year)',
                 labels={'Close': 'Price', 'Date': 'Date'}
+            )
+            
+            # Customize chart appearance
+            fig.update_layout(
+                plot_bgcolor='rgba(0,0,0,0)',
+                paper_bgcolor='rgba(0,0,0,0)',
+                font_color='#e0e0e0',
+                title_font_size=20,
+                title_x=0.5
+            )
+            fig.update_xaxes(
+                showgrid=True, 
+                gridwidth=1, 
+                gridcolor='rgba(255,255,255,0.1)'
+            )
+            fig.update_yaxes(
+                showgrid=True, 
+                gridwidth=1, 
+                gridcolor='rgba(255,255,255,0.1)'
             )
             
             return fig
@@ -191,6 +257,9 @@ Analysis Requirements:
             page_icon="📈",
             layout="wide"
         )
+
+        # Render Sidebar
+        self.render_sidebar()
 
         # Custom Dark Theme CSS
         st.markdown("""
@@ -255,6 +324,14 @@ Analysis Requirements:
         }
         .stButton > button:hover {
             background-color: #45a049 !important;
+        }
+
+        /* Sidebar Enhancements */
+        .css-1aumxhk {
+            background-color: #1e1e1e !important;
+        }
+        .css-1aumxhk .stMarkdown {
+            color: #e0e0e0 !important;
         }
 
         /* Metric Styles */
