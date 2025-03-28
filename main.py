@@ -25,62 +25,66 @@ class FinanceIntelligenceApp:
         except Exception as e:
             st.error(f"Client Initialization Error: {e}")
 
-    def get_stock_info(self, ticker):
-        """
-        Comprehensive stock information retrieval
-        Handles multiple potential data sources and error scenarios
-        """
-        try:
-            # Validate ticker
-            if not ticker or not isinstance(ticker, str):
-                st.warning("Please enter a valid stock ticker")
-                return None
-
-            # Fetch stock data
-            stock = yf.Ticker(ticker.upper())
-            
-            # Retrieve comprehensive information
-            info = stock.info
-            if not info:
-                st.warning(f"No information found for ticker: {ticker}")
-                return None
-
-            # Additional error checking for critical fields
-            try:
-                current_price = round(info.get('regularMarketPrice', 0), 2)
-                market_cap = f"${info.get('marketCap', 0):,}"
-                pe_ratio = round(info.get('trailingPE', 0), 2)
-                dividend_yield = f"{info.get('dividendYield', 0)*100:.2f}%"
-            except Exception as e:
-                st.warning(f"Error processing stock data: {e}")
-                return None
-
-            # Construct detailed stock data dictionary
-            stock_data = {
-                "ticker": ticker.upper(),
-                "name": info.get('longName', ticker),
-                "current_price": current_price,
-                "previous_close": round(info.get('previousClose', 0), 2),
-                "open_price": round(info.get('regularMarketOpen', 0), 2),
-                "day_high": round(info.get('dayHigh', 0), 2),
-                "day_low": round(info.get('dayLow', 0), 2),
-                "volume": info.get('volume', 0),
-                "market_cap": market_cap,
-                "pe_ratio": pe_ratio,
-                "dividend_yield": dividend_yield,
-                "52_week_high": round(info.get('fiftyTwoWeekHigh', 0), 2),
-                "52_week_low": round(info.get('fiftyTwoWeekLow', 0), 2),
-                "sector": info.get('sector', 'N/A'),
-                "industry": info.get('industry', 'N/A')
-            }
-            
-            return stock_data
-        
-        except Exception as e:
-            st.error(f"Stock Information Retrieval Error: {e}")
-            st.error(traceback.format_exc())  # Print full traceback for debugging
+def get_stock_info(self, ticker):
+    """
+    Comprehensive stock information retrieval
+    Handles multiple potential data sources and error scenarios
+    """
+    try:
+        # Validate ticker
+        if not ticker or not isinstance(ticker, str):
+            st.warning("Please enter a valid stock ticker")
             return None
 
+        # Fetch stock data
+        stock = yf.Ticker(ticker.upper())
+        
+        # Retrieve comprehensive information
+        info = stock.info
+        if not info:
+            st.warning(f"No information found for ticker: {ticker}")
+            return None
+
+        # Enhanced error handling and default values
+        def safe_get(dictionary, key, default=0):
+            """Safely retrieve dictionary values with a default"""
+            try:
+                value = dictionary.get(key, default)
+                return value if value is not None else default
+            except Exception:
+                return default
+
+        # Construct detailed stock data dictionary with safer value extraction
+        stock_data = {
+            "ticker": ticker.upper(),
+            "name": safe_get(info, 'longName', ticker),
+            "current_price": round(safe_get(info, 'regularMarketPrice', 0), 2),
+            "previous_close": round(safe_get(info, 'previousClose', 0), 2),
+            "open_price": round(safe_get(info, 'regularMarketOpen', 0), 2),
+            "day_high": round(safe_get(info, 'dayHigh', 0), 2),
+            "day_low": round(safe_get(info, 'dayLow', 0), 2),
+            "volume": safe_get(info, 'volume', 0),
+            "market_cap": f"${safe_get(info, 'marketCap', 0):,}",
+            "pe_ratio": round(safe_get(info, 'trailingPE', 0), 2),
+            "dividend_yield": f"{safe_get(info, 'dividendYield', 0)*100:.2f}%",
+            "52_week_high": round(safe_get(info, 'fiftyTwoWeekHigh', 0), 2),
+            "52_week_low": round(safe_get(info, 'fiftyTwoWeekLow', 0), 2),
+            "sector": safe_get(info, 'sector', 'N/A'),
+            "industry": safe_get(info, 'industry', 'N/A')
+        }
+        
+        # Additional validation to ensure critical fields are present
+        if all(stock_data.values()):
+            return stock_data
+        else:
+            st.warning(f"Incomplete data retrieved for {ticker}")
+            return None
+    
+    except Exception as e:
+        st.error(f"Stock Information Retrieval Error: {e}")
+        st.error(traceback.format_exc())  # Print full traceback for debugging
+        return None
+        
     def generate_google_search(self, query):
         """
         Advanced Google Search with refined results
