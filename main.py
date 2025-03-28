@@ -183,36 +183,123 @@ Analysis Requirements:
 
     def render_app(self):
         """
-        Streamlit Application Rendering
+        Enhanced Streamlit Application Rendering with Dark Theme
         """
         # Page Configuration
         st.set_page_config(
-            page_title="Finance Intelligence",
-            page_icon="💹",
+            page_title="Finance Intelligence Pro",
+            page_icon="📈",
             layout="wide"
         )
 
-        # Custom CSS for Enhanced UI
+        # Custom Dark Theme CSS
         st.markdown("""
         <style>
-        .reportview-container {
-            background: linear-gradient(to right, #f4f4f4, #e9e9e9);
+        /* Dark Theme Base */
+        body {
+            color: #e0e0e0;
+            background-color: #121212;
         }
-        .sidebar .sidebar-content {
-            background: linear-gradient(to bottom, #2c3e50, #3498db);
-            color: white;
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 10px;
         }
-        .stButton>button {
-            background-color: #3498db;
-            color: white;
+        ::-webkit-scrollbar-track {
+            background: #1e1e1e;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #4a4a4a;
+            border-radius: 5px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #6a6a6a;
+        }
+
+        /* Streamlit Container Styles */
+        .stApp {
+            background-color: #121212;
+        }
+        .stCard {
+            background-color: #1e1e1e;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+        .stCard:hover {
+            transform: scale(1.02);
+        }
+
+        /* Typography */
+        h1, h2, h3, h4, h5, h6 {
+            color: #4CAF50 !important;
+            font-weight: 600;
+        }
+
+        /* Input and Button Styles */
+        .stTextInput > div > div > input {
+            color: #e0e0e0;
+            background-color: #2c2c2c !important;
+            border: 1px solid #4a4a4a !important;
+            border-radius: 8px;
+            padding: 10px;
+        }
+        .stButton > button {
+            background-color: #4CAF50 !important;
+            color: white !important;
+            border-radius: 8px;
+            border: none;
+            padding: 10px 20px;
+            font-weight: bold;
+            transition: background-color 0.3s ease;
+        }
+        .stButton > button:hover {
+            background-color: #45a049 !important;
+        }
+
+        /* Metric Styles */
+        .metric-container {
+            background-color: #1e1e1e;
             border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .metric-value {
+            color: #4CAF50;
+            font-size: 1.5em;
+            font-weight: bold;
+        }
+        .metric-label {
+            color: #a0a0a0;
+            font-size: 0.9em;
+        }
+
+        /* Spinner and Progress Bar */
+        .stSpinner > div {
+            border-color: #4CAF50 transparent #4CAF50 transparent !important;
         }
         </style>
         """, unsafe_allow_html=True)
 
-        # Main Application Title
-        st.title("💹 Finance Intelligence Dashboard")
-        st.subheader("AI-Powered Investment Research")
+        # Main Application Title with Gradient
+        st.markdown("""
+        <div style="background: linear-gradient(135deg, #4CAF50, #2196F3); 
+                    -webkit-background-clip: text; 
+                    -webkit-text-fill-color: transparent; 
+                    font-size: 3em; 
+                    font-weight: bold; 
+                    text-align: center; 
+                    margin-bottom: 20px;">
+            Finance Intelligence Pro
+        </div>
+        """, unsafe_allow_html=True)
+
+        st.markdown("""
+        <p style="color: #a0a0a0; text-align: center; margin-bottom: 30px;">
+        🚀 AI-Powered Investment Research & Insights
+        </p>
+        """, unsafe_allow_html=True)
 
         # Stock Ticker Input
         col1, col2 = st.columns([3, 1])
@@ -224,12 +311,12 @@ Analysis Requirements:
             )
         
         with col2:
-            st.write("") # Spacer
-            analyze_button = st.button("Analyze", type="primary")
+            st.write(" ") # Spacer
+            analyze_button = st.button("Analyze Stocks", type="primary")
 
         # Analysis Section
         if analyze_button and ticker:
-            with st.spinner("Conducting comprehensive financial research..."):
+            with st.spinner("🔍 Conducting deep financial research..."):
                 try:
                     # Retrieve Stock Information
                     stock_info = self.get_stock_info(ticker)
