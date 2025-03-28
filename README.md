@@ -134,10 +134,6 @@ Finance Intelligence Pro addresses these needs by combining multiple data source
 
 Contributions are welcome! Please feel free to submit a Pull Request.
 
-📄 **License**
-
-[MIT License]
-
 💡 **Disclaimer**
 
 This tool provides informational purposes only. Always conduct your own research and consult financial professionals before making investment decisions.
