@@ -4,3 +4,4 @@ python-dotenv
 yfinance
 google-api-python-client
 openai
+googleapiclient
