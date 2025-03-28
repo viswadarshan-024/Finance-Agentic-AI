@@ -29,7 +29,7 @@ class FinanceIntelligenceApp:
         """
         Create an informative sidebar with application details and usage guide
         """
-        st.sidebar.title("🚀 Finance Intelligence Pro")
+        st.sidebar.title("Finance Intelligence Pro")
         
         st.sidebar.markdown("""
         ## About the App
@@ -374,7 +374,7 @@ Analysis Requirements:
 
         st.markdown("""
         <p style="color: #a0a0a0; text-align: center; margin-bottom: 30px;">
-        🚀 AI-Powered Investment Research & Insights
+        AI-Powered Investment Research & Insights
         </p>
         """, unsafe_allow_html=True)
 
