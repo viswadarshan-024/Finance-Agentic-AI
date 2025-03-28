@@ -1,98 +1,143 @@
-import streamlit as st
-from dotenv import load_dotenv
 import os
+import streamlit as st
+from groq import Groq
+from dotenv import load_dotenv
+import yfinance as yf
+import duckduckgo_search as ddgs
 
-# Import custom modules
-from src.stock_analyzer import StockAnalyzer
-from src.financial_search import WebSearcher
-from src.ai_insights import AIFinancialAnalyst
+# Load environment variables
+load_dotenv()
+
+class FinanceAgentApp:
+    def __init__(self):
+        # Initialize Groq client
+        self.groq_client = Groq(
+            api_key=os.getenv('GROQ_API_KEY')
+        )
+
+    def duckduckgo_search(self, query):
+        """Perform web search using DuckDuckGo"""
+        try:
+            search_results = ddgs.ddg(query, max_results=5)
+            return search_results
+        except Exception as e:
+            st.error(f"Web search error: {e}")
+            return []
+
+    def get_stock_info(self, ticker):
+        """Retrieve stock information using yfinance"""
+        try:
+            stock = yf.Ticker(ticker)
+            
+            # Basic stock info
+            info = stock.info
+            
+            # Recent stock price
+            history = stock.history(period="1d")
+            current_price = history['Close'].iloc[0] if not history.empty else "N/A"
+            
+            # Analyst recommendations
+            recommendations = stock.recommendations
+            
+            # Recent news
+            news = stock.news[:5]
+            
+            return {
+                "basic_info": info,
+                "current_price": current_price,
+                "recommendations": recommendations,
+                "news": news
+            }
+        except Exception as e:
+            st.error(f"Stock info retrieval error: {e}")
+            return None
+
+    def generate_analysis(self, stock_info, web_search_results):
+        """Generate investment analysis using Groq"""
+        try:
+            prompt = f"""Provide a comprehensive investment analysis based on the following information:
+
+Stock Information:
+{stock_info['basic_info']}
+
+Current Price: {stock_info['current_price']}
+
+Analyst Recommendations:
+{stock_info['recommendations']}
+
+Web Search Results:
+{web_search_results}
+
+Please create a detailed report including:
+1. Company Overview
+2. Recent Performance
+3. Market Sentiment
+4. Investment Recommendation
+5. Key Risks and Opportunities
+"""
+            
+            chat_completion = self.groq_client.chat.completions.create(
+                messages=[
+                    {"role": "system", "content": "You are a financial analyst providing investment insights."},
+                    {"role": "user", "content": prompt}
+                ],
+                model="llama3-70b-8192"
+            )
+            
+            return chat_completion.choices[0].message.content
+        except Exception as e:
+            st.error(f"Analysis generation error: {e}")
+            return None
+
+    def render_app(self):
+        """Main Streamlit application rendering"""
+        st.title("📈 AI Finance Agent")
+        st.subheader("Investment Research & Analysis")
+
+        # Sidebar for configuration
+        with st.sidebar:
+            st.header("Configuration")
+            api_key = st.text_input("Groq API Key", type="password", 
+                                    help="Your Groq API key for generating analysis")
+            if api_key:
+                os.environ['GROQ_API_KEY'] = api_key
+
+        # Stock ticker input
+        ticker = st.text_input("Enter Stock Ticker", placeholder="e.g., AAPL")
+        
+        if st.button("Analyze Investment") and ticker:
+            with st.spinner("Gathering financial insights..."):
+                # Step 1: Get Stock Information
+                stock_info = self.get_stock_info(ticker)
+                
+                # Step 2: Perform Web Search
+                web_search = self.duckduckgo_search(f"{ticker} stock investment analysis")
+                
+                # Step 3: Generate Comprehensive Analysis
+                if stock_info and web_search:
+                    analysis = self.generate_analysis(stock_info, web_search)
+                    
+                    # Display Results
+                    st.subheader(f"Investment Analysis for {ticker}")
+                    
+                    # Stock Price Section
+                    st.metric("Current Price", f"${stock_info['current_price']:.2f}")
+                    
+                    # Detailed Analysis
+                    st.markdown("### 📊 Comprehensive Analysis")
+                    st.write(analysis)
+                    
+                    # Recent News
+                    st.subheader("📰 Recent News")
+                    for news_item in stock_info['news']:
+                        st.markdown(f"**{news_item['title']}**")
+                        st.write(news_item['link'])
+                else:
+                    st.warning("Could not retrieve complete information. Please check the ticker.")
 
 def main():
-    # Load environment variables
-    load_dotenv()
-
-    # Page configuration
-    st.set_page_config(
-        page_title="AI Financial Analyst",
-        page_icon="📊",
-        layout="wide"
-    )
-
-    # Title and description
-    st.title("🤖 AI Financial Analyst")
-    st.markdown("*Empowering your financial research with AI-driven insights*")
-
-    # Sidebar for user input
-    st.sidebar.header("Financial Research Tools")
-    
-    # Stock ticker input
-    ticker = st.sidebar.text_input(
-        "Enter Stock Ticker", 
-        placeholder="e.g., AAPL, GOOGL, MSFT"
-    )
-
-    # Search query input
-    search_query = st.sidebar.text_input(
-        "Market News & Trends Search",
-        placeholder="e.g., Tech stocks, Market trends"
-    )
-
-    # Analysis button
-    analyze_button = st.sidebar.button("Analyze Financial Data")
-
-    # Main content area
-    if analyze_button and ticker:
-        # Initialize modules
-        stock_analyzer = StockAnalyzer()
-        web_searcher = WebSearcher()
-        ai_analyst = AIFinancialAnalyst()
-
-        # Perform stock analysis
-        stock_data = stock_analyzer.get_stock_info(ticker)
-        formatted_stock_info = stock_analyzer.format_stock_info(stock_data)
-        
-        # Perform web search
-        search_results = web_searcher.search_financial_news(
-            f"{ticker} stock market news", 
-            max_results=3
-        )
-        formatted_search_results = web_searcher.display_search_results(search_results)
-        
-        # Generate AI insights
-        ai_insights = ai_analyst.generate_financial_insights(stock_data, search_results)
-
-        # Display results
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            st.markdown("### 📈 Stock Information")
-            st.markdown(formatted_stock_info)
-        
-        with col2:
-            st.markdown("### 📰 Market News")
-            st.markdown(formatted_search_results)
-        
-        # AI Insights Section
-        st.markdown("### 🧠 AI Financial Analysis")
-        st.markdown(ai_insights)
-
-    elif analyze_button and search_query:
-        # Perform web search for general market trends
-        web_searcher = WebSearcher()
-        search_results = web_searcher.search_financial_news(search_query)
-        formatted_search_results = web_searcher.display_search_results(search_results)
-        
-        st.markdown("### 📰 Market News and Trends")
-        st.markdown(formatted_search_results)
-
-    # Footer
-    st.sidebar.markdown("""
-    ---
-    **Disclaimer**: 
-    - Information for research purposes only
-    - Not financial advice
-    - Always consult financial professionals
-    """)
+    app = FinanceAgentApp()
+    app.render_app()
 
 if __name__ == "__main__":
     main()
