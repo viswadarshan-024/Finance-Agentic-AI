@@ -4,3 +4,4 @@ python-dotenv
 yfinance
 openai
 google-api-python-client
+plotly
