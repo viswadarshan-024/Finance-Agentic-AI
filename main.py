@@ -162,6 +162,14 @@ class FinanceIntelligenceApp:
             
             prompt = f"""Provide a comprehensive investment analysis for {stock_info['ticker']}:
 
+FORMATTING INSTRUCTIONS:
+- Use clear, professional markdown formatting
+- Structure the analysis with clear headings and subheadings
+- Use bullet points for key insights
+- Highlight important information with bold or italic text
+- Maintain a professional, analytical tone
+- Provide actionable insights
+
 Stock Overview:
 - Company: {stock_info['name']}
 - Current Price: ${stock_info['current_price']}
@@ -194,7 +202,7 @@ Analysis Requirements:
                     {"role": "system", "content": "You are a professional financial analyst providing nuanced investment insights."},
                     {"role": "user", "content": prompt}
                 ],
-                model="llama3-70b-8192",
+                model="llama-3.3-70b-versatile",
                 max_tokens=1500,
                 temperature=0.3
             )
