@@ -45,22 +45,29 @@ class FinanceIntelligenceApp:
                 st.warning(f"No information found for ticker: {ticker}")
                 return None
 
-            # Historical price data
-            history = stock.history(period="1mo")
-            
+            # Additional error checking for critical fields
+            try:
+                current_price = round(info.get('regularMarketPrice', 0), 2)
+                market_cap = f"${info.get('marketCap', 0):,}"
+                pe_ratio = round(info.get('trailingPE', 0), 2)
+                dividend_yield = f"{info.get('dividendYield', 0)*100:.2f}%"
+            except Exception as e:
+                st.warning(f"Error processing stock data: {e}")
+                return None
+
             # Construct detailed stock data dictionary
             stock_data = {
                 "ticker": ticker.upper(),
                 "name": info.get('longName', ticker),
-                "current_price": round(info.get('regularMarketPrice', 0), 2),
+                "current_price": current_price,
                 "previous_close": round(info.get('previousClose', 0), 2),
                 "open_price": round(info.get('regularMarketOpen', 0), 2),
                 "day_high": round(info.get('dayHigh', 0), 2),
                 "day_low": round(info.get('dayLow', 0), 2),
                 "volume": info.get('volume', 0),
-                "market_cap": f"${info.get('marketCap', 0):,}",
-                "pe_ratio": round(info.get('trailingPE', 0), 2),
-                "dividend_yield": f"{info.get('dividendYield', 0)*100:.2f}%",
+                "market_cap": market_cap,
+                "pe_ratio": pe_ratio,
+                "dividend_yield": dividend_yield,
                 "52_week_high": round(info.get('fiftyTwoWeekHigh', 0), 2),
                 "52_week_low": round(info.get('fiftyTwoWeekLow', 0), 2),
                 "sector": info.get('sector', 'N/A'),
@@ -71,6 +78,7 @@ class FinanceIntelligenceApp:
         
         except Exception as e:
             st.error(f"Stock Information Retrieval Error: {e}")
+            st.error(traceback.format_exc())  # Print full traceback for debugging
             return None
 
     def generate_google_search(self, query):
@@ -338,7 +346,10 @@ Analysis Requirements:
                     stock_info = self.get_stock_info(ticker)
                     
                     if not stock_info:
-                        st.warning("Unable to retrieve stock information. Check the ticker symbol.")
+                        st.warning("Unable to retrieve stock information. Please check the following:")
+                        st.warning("1. Ensure the ticker is correct")
+                        st.warning("2. The stock might not be currently tradable")
+                        st.warning("3. There might be temporary data retrieval issues")
                         return
 
                     # Perform Web Search
