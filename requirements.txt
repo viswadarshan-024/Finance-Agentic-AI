@@ -1,6 +1,7 @@
 # Core Python Libraries
 streamlit==1.32.0
 python-dotenv==1.0.0
+src
 
 # Financial Data Libraries
 yfinance==0.2.33
