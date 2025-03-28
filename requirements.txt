@@ -2,5 +2,5 @@ streamlit
 groq
 python-dotenv
 yfinance
-duckduckgo-search
+google-api-python-client
 openai
