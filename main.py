@@ -1,217 +1,293 @@
-import os
-import json
 import streamlit as st
-from groq import Groq
-from dotenv import load_dotenv
 import yfinance as yf
+from groq import Groq
 from googleapiclient.discovery import build
+import traceback
+import plotly.express as px
+import pandas as pd
 
-# Load environment variables
-load_dotenv()
-
-class FinanceAgentApp:
+class FinanceIntelligenceApp:
     def __init__(self):
-        # Initialize Groq client
-        self.groq_client = Groq(
-            api_key=os.getenv('GROQ_API_KEY')
-        )
-        
-        # Initialize Google Search client
-        self.google_search_client = build(
-            "customsearch", 
-            "v1", 
-            developerKey=os.getenv('GOOGLE_SEARCH_API_KEY')
-        )
+        """Initialize the application with secure API access"""
+        # Access Streamlit secrets
+        self.groq_api_key = st.secrets.get("GROQ_API_KEY")
+        self.google_search_api_key = st.secrets.get("GOOGLE_SEARCH_API_KEY")
+        self.google_search_engine_id = st.secrets.get("GOOGLE_SEARCH_ENGINE_ID")
 
-    def google_grounded_search(self, query, num_results=5):
+        # Initialize clients
+        try:
+            self.groq_client = Groq(api_key=self.groq_api_key)
+            self.google_search_client = build(
+                "customsearch", 
+                "v1", 
+                developerKey=self.google_search_api_key
+            )
+        except Exception as e:
+            st.error(f"Client Initialization Error: {e}")
+
+    def get_stock_info(self, ticker):
         """
-        Perform a grounded search using Google Custom Search API
-        
-        Grounded search strategies:
-        1. Use specific search parameters
-        2. Filter for recent, high-quality sources
-        3. Limit to specific domains if needed
+        Comprehensive stock information retrieval
+        Handles multiple potential data sources and error scenarios
         """
         try:
-            # Perform search with advanced parameters
+            # Validate ticker
+            if not ticker or not isinstance(ticker, str):
+                st.warning("Please enter a valid stock ticker")
+                return None
+
+            # Fetch stock data
+            stock = yf.Ticker(ticker.upper())
+            
+            # Retrieve comprehensive information
+            info = stock.info
+            if not info:
+                st.warning(f"No information found for ticker: {ticker}")
+                return None
+
+            # Historical price data
+            history = stock.history(period="1mo")
+            
+            # Construct detailed stock data dictionary
+            stock_data = {
+                "ticker": ticker.upper(),
+                "name": info.get('longName', ticker),
+                "current_price": round(info.get('regularMarketPrice', 0), 2),
+                "previous_close": round(info.get('previousClose', 0), 2),
+                "open_price": round(info.get('regularMarketOpen', 0), 2),
+                "day_high": round(info.get('dayHigh', 0), 2),
+                "day_low": round(info.get('dayLow', 0), 2),
+                "volume": info.get('volume', 0),
+                "market_cap": f"${info.get('marketCap', 0):,}",
+                "pe_ratio": round(info.get('trailingPE', 0), 2),
+                "dividend_yield": f"{info.get('dividendYield', 0)*100:.2f}%",
+                "52_week_high": round(info.get('fiftyTwoWeekHigh', 0), 2),
+                "52_week_low": round(info.get('fiftyTwoWeekLow', 0), 2),
+                "sector": info.get('sector', 'N/A'),
+                "industry": info.get('industry', 'N/A')
+            }
+            
+            return stock_data
+        
+        except Exception as e:
+            st.error(f"Stock Information Retrieval Error: {e}")
+            return None
+
+    def generate_google_search(self, query):
+        """
+        Advanced Google Search with refined results
+        """
+        try:
             search_results = self.google_search_client.cse().list(
                 q=query,
-                cx=os.getenv('GOOGLE_SEARCH_ENGINE_ID'),
-                num=num_results,
-                sort='date',  # Sort by date to get recent results
-                # Optional: restrict to specific domains for financial information
-                siteSearch='finance.yahoo.com,seekingalpha.com,bloomberg.com,reuters.com',
-                # Optionally add more filters like date range
-                dateRestrict='m[1]'  # Results from last month
+                cx=self.google_search_engine_id,
+                num=5
             ).execute()
             
-            # Process and return refined results
+            # Process and refine search results
             refined_results = []
             if 'items' in search_results:
                 for item in search_results['items']:
                     refined_results.append({
                         'title': item.get('title', ''),
                         'link': item.get('link', ''),
-                        'snippet': item.get('snippet', ''),
-                        'source': item.get('displayLink', '')
+                        'snippet': item.get('snippet', '')
                     })
             
             return refined_results
         
         except Exception as e:
-            st.error(f"Google Search error: {e}")
+            st.error(f"Google Search Error: {e}")
             return []
 
-    def get_stock_info(self, ticker):
-        """Retrieve comprehensive stock information"""
-        try:
-            stock = yf.Ticker(ticker)
-            
-            # Comprehensive stock information gathering
-            info = stock.info
-            history = stock.history(period="1mo")
-            
-            # Extended stock metrics
-            stock_data = {
-                "basic_info": info,
-                "current_price": history['Close'].iloc[-1] if not history.empty else "N/A",
-                "52_week_high": info.get('fiftyTwoWeekHigh', "N/A"),
-                "52_week_low": info.get('fiftyTwoWeekLow', "N/A"),
-                "market_cap": info.get('marketCap', "N/A"),
-                "pe_ratio": info.get('trailingPE', "N/A"),
-                "dividend_yield": info.get('dividendYield', "N/A"),
-                "recommendations": stock.recommendations,
-                "earnings_dates": stock.earnings_dates,
-                "news": stock.news[:5]
-            }
-            
-            return stock_data
-        
-        except Exception as e:
-            st.error(f"Stock info retrieval error: {e}")
-            return None
-
-    def generate_grounded_analysis(self, stock_info, search_results):
+    def generate_ai_analysis(self, stock_info, search_results):
         """
-        Generate a grounded, contextually rich investment analysis
-        
-        Grounding strategies:
-        1. Incorporate web search context
-        2. Provide multi-source perspective
-        3. Highlight verifiable information
+        AI-Powered Financial Analysis Generation
         """
         try:
-            # Construct a comprehensive prompt with multiple information sources
+            # Construct detailed prompt
             sources_text = "\n".join([
-                f"Source {i+1}: {result['title']} ({result['source']})\n"
+                f"Source: {result['title']}\n"
                 f"Snippet: {result['snippet']}\n"
                 f"Link: {result['link']}"
-                for i, result in enumerate(search_results)
+                for result in search_results
             ])
             
-            prompt = f"""Provide a comprehensive, multi-source investment analysis with a strong emphasis on verifiable facts:
+            prompt = f"""Provide a comprehensive investment analysis for {stock_info['ticker']}:
 
-Stock Fundamentals:
+Stock Overview:
+- Company: {stock_info['name']}
 - Current Price: ${stock_info['current_price']}
-- 52-Week Range: ${stock_info['52_week_low']} - ${stock_info['52_week_high']}
 - Market Cap: {stock_info['market_cap']}
+- Sector: {stock_info['sector']}
+- Industry: {stock_info['industry']}
+
+Price Performance:
+- 52-Week Range: ${stock_info['52_week_low']} - ${stock_info['52_week_high']}
+- Day Range: ${stock_info['day_low']} - ${stock_info['day_high']}
+- Previous Close: ${stock_info['previous_close']}
+
+Financial Metrics:
 - P/E Ratio: {stock_info['pe_ratio']}
 - Dividend Yield: {stock_info['dividend_yield']}
 
-Recent Web Search Context:
+Web Search Insights:
 {sources_text}
 
 Analysis Requirements:
-1. Synthesize information from stock data and web sources
-2. Provide a balanced investment perspective
-3. Highlight key risks and opportunities
-4. Use clear, evidence-based language
-5. Cite sources where possible
-
-Format the analysis as a professional investment report with clear sections and actionable insights."""
+1. Comprehensive company overview
+2. Recent financial performance
+3. Market sentiment and trends
+4. Potential investment risks and opportunities
+5. Short to medium-term outlook"""
             
-            # Generate analysis using Groq's Llama model
-            chat_completion = self.groq_client.chat.completions.create(
+            # Generate analysis using Groq
+            response = self.groq_client.chat.completions.create(
                 messages=[
-                    {
-                        "role": "system", 
-                        "content": "You are an objective financial analyst. Provide nuanced, data-driven investment insights."
-                    },
-                    {
-                        "role": "user", 
-                        "content": prompt
-                    }
+                    {"role": "system", "content": "You are a professional financial analyst providing nuanced investment insights."},
+                    {"role": "user", "content": prompt}
                 ],
                 model="llama3-70b-8192",
-                temperature=0.3,  # Lower temperature for more focused output
-                max_tokens=1000
+                max_tokens=1500,
+                temperature=0.3
             )
             
-            return chat_completion.choices[0].message.content
+            return response.choices[0].message.content
         
         except Exception as e:
-            st.error(f"Grounded analysis generation error: {e}")
+            st.error(f"AI Analysis Generation Error: {e}")
+            return None
+
+    def create_price_trend_chart(self, ticker):
+        """
+        Create interactive price trend chart
+        """
+        try:
+            stock = yf.Ticker(ticker)
+            hist = stock.history(period="1y")
+            
+            # Create interactive line chart
+            fig = px.line(
+                hist, 
+                x=hist.index, 
+                y='Close', 
+                title=f'{ticker} Stock Price Trend',
+                labels={'Close': 'Price', 'Date': 'Date'}
+            )
+            
+            return fig
+        
+        except Exception as e:
+            st.error(f"Price Chart Generation Error: {e}")
             return None
 
     def render_app(self):
-        """Main Streamlit application interface"""
-        st.title("🔍 Grounded Finance Intelligence")
+        """
+        Streamlit Application Rendering
+        """
+        # Page Configuration
+        st.set_page_config(
+            page_title="Finance Intelligence",
+            page_icon="💹",
+            layout="wide"
+        )
+
+        # Custom CSS for Enhanced UI
+        st.markdown("""
+        <style>
+        .reportview-container {
+            background: linear-gradient(to right, #f4f4f4, #e9e9e9);
+        }
+        .sidebar .sidebar-content {
+            background: linear-gradient(to bottom, #2c3e50, #3498db);
+            color: white;
+        }
+        .stButton>button {
+            background-color: #3498db;
+            color: white;
+            border-radius: 10px;
+        }
+        </style>
+        """, unsafe_allow_html=True)
+
+        # Main Application Title
+        st.title("💹 Finance Intelligence Dashboard")
         st.subheader("AI-Powered Investment Research")
 
-        # Sidebar configuration
-        with st.sidebar:
-            st.header("🔑 API Configuration")
-            groq_key = st.text_input("Groq API Key", type="password")
-            google_search_key = st.text_input("Google Search API Key", type="password")
-            google_search_engine_id = st.text_input("Google Search Engine ID")
-            
-            # Allow dynamic API key setting
-            if groq_key:
-                os.environ['GROQ_API_KEY'] = groq_key
-            if google_search_key:
-                os.environ['GOOGLE_SEARCH_API_KEY'] = google_search_key
-            if google_search_engine_id:
-                os.environ['GOOGLE_SEARCH_ENGINE_ID'] = google_search_engine_id
-
-        # Stock analysis section
-        ticker = st.text_input("Enter Stock Ticker", placeholder="e.g. AAPL, GOOGL")
+        # Stock Ticker Input
+        col1, col2 = st.columns([3, 1])
+        with col1:
+            ticker = st.text_input(
+                "Enter Stock Ticker", 
+                placeholder="e.g., AAPL, GOOGL",
+                help="Enter a valid stock ticker symbol"
+            )
         
-        if st.button("Generate Grounded Analysis") and ticker:
-            with st.spinner("Conducting comprehensive research..."):
-                # Retrieve stock information
-                stock_info = self.get_stock_info(ticker)
+        with col2:
+            st.write("") # Spacer
+            analyze_button = st.button("Analyze", type="primary")
+
+        # Analysis Section
+        if analyze_button and ticker:
+            with st.spinner("Conducting comprehensive financial research..."):
+                try:
+                    # Retrieve Stock Information
+                    stock_info = self.get_stock_info(ticker)
+                    
+                    if not stock_info:
+                        st.warning("Unable to retrieve stock information. Check the ticker symbol.")
+                        return
+
+                    # Perform Web Search
+                    search_query = f"{ticker} stock financial analysis current market insights"
+                    search_results = self.generate_google_search(search_query)
+
+                    # Generate AI Analysis
+                    ai_analysis = self.generate_ai_analysis(stock_info, search_results)
+                    
+                    # Price Trend Chart
+                    price_chart = self.create_price_trend_chart(ticker)
+
+                    # Display Results
+                    if ai_analysis:
+                        # Key Metrics Display
+                        st.subheader(f"📊 {stock_info['name']} ({stock_info['ticker']}) Analysis")
+                        
+                        # Metrics Columns
+                        metrics_cols = st.columns(4)
+                        metrics_data = [
+                            ("Current Price", f"${stock_info['current_price']}"),
+                            ("Market Cap", stock_info['market_cap']),
+                            ("P/E Ratio", stock_info['pe_ratio']),
+                            ("Dividend Yield", stock_info['dividend_yield'])
+                        ]
+                        
+                        for col, (label, value) in zip(metrics_cols, metrics_data):
+                            col.metric(label, value)
+
+                        # Price Trend Chart
+                        if price_chart:
+                            st.plotly_chart(price_chart, use_container_width=True)
+
+                        # AI Generated Analysis
+                        st.markdown("### 🤖 AI Insights")
+                        st.write(ai_analysis)
+
+                        # Web Sources
+                        with st.expander("Sources Consulted"):
+                            for source in search_results:
+                                st.markdown(f"- **{source['title']}** ([Link]({source['link']}))")
+
+                    else:
+                        st.warning("Could not generate comprehensive analysis.")
                 
-                # Perform grounded web search
-                search_query = f"{ticker} stock analysis latest financial insights"
-                search_results = self.google_grounded_search(search_query)
-                
-                # Generate analysis
-                if stock_info and search_results:
-                    analysis = self.generate_grounded_analysis(stock_info, search_results)
-                    
-                    # Display results
-                    st.subheader(f"🔬 Grounded Analysis: {ticker}")
-                    
-                    # Stock key metrics
-                    cols = st.columns(3)
-                    cols[0].metric("Current Price", f"${stock_info['current_price']}")
-                    cols[1].metric("Market Cap", str(stock_info['market_cap']))
-                    cols[2].metric("P/E Ratio", str(stock_info['pe_ratio']))
-                    
-                    # Detailed analysis
-                    st.markdown("### 📊 Comprehensive Insights")
-                    st.write(analysis)
-                    
-                    # Web sources used
-                    st.subheader("🌐 Sources Consulted")
-                    for source in search_results:
-                        st.markdown(f"- **{source['title']}** ([Read More]({source['link']}))")
-                
-                else:
-                    st.warning("Unable to generate analysis. Please verify the stock ticker.")
+                except Exception as e:
+                    st.error(f"Unexpected Error: {e}")
+                    st.warning("Please try again with a different stock ticker.")
 
 def main():
-    app = FinanceAgentApp()
+    # Initialize and run the application
+    app = FinanceIntelligenceApp()
     app.render_app()
 
 if __name__ == "__main__":
