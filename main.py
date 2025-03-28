@@ -183,7 +183,7 @@ Analysis Requirements:
 
     def render_app(self):
         """
-        Enhanced Streamlit Application Rendering with Dark Theme
+        Enhanced Streamlit Application Rendering with Improved Layout
         """
         # Page Configuration
         st.set_page_config(
@@ -192,97 +192,116 @@ Analysis Requirements:
             layout="wide"
         )
 
-        # Custom Dark Theme CSS
+        # Custom Dark Theme CSS with Enhanced Layout
         st.markdown("""
         <style>
         /* Dark Theme Base */
         body {
             color: #e0e0e0;
             background-color: #121212;
+            font-family: 'Inter', sans-serif;
         }
 
-        /* Custom Scrollbar */
-        ::-webkit-scrollbar {
-            width: 10px;
-        }
-        ::-webkit-scrollbar-track {
-            background: #1e1e1e;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #4a4a4a;
-            border-radius: 5px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #6a6a6a;
-        }
-
-        /* Streamlit Container Styles */
+        /* Layout Improvements */
         .stApp {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
             background-color: #121212;
         }
-        .stCard {
+
+        /* Card and Container Styles */
+        .stCard, .stContainer {
             background-color: #1e1e1e;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            transition: transform 0.3s ease;
-        }
-        .stCard:hover {
-            transform: scale(1.02);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 6px 12px rgba(0,0,0,0.2);
+            transition: all 0.3s ease;
         }
 
-        /* Typography */
-        h1, h2, h3, h4, h5, h6 {
+        .stCard:hover, .stContainer:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.3);
+        }
+
+        /* Detailed Typography */
+        h1 { 
+            color: #4CAF50 !important;
+            font-size: 2.5em;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        h2, h3 {
             color: #4CAF50 !important;
             font-weight: 600;
+            border-bottom: 2px solid #4CAF50;
+            padding-bottom: 10px;
         }
 
-        /* Input and Button Styles */
-        .stTextInput > div > div > input {
-            color: #e0e0e0;
-            background-color: #2c2c2c !important;
-            border: 1px solid #4a4a4a !important;
-            border-radius: 8px;
-            padding: 10px;
-        }
-        .stButton > button {
-            background-color: #4CAF50 !important;
-            color: white !important;
-            border-radius: 8px;
-            border: none;
-            padding: 10px 20px;
-            font-weight: bold;
-            transition: background-color 0.3s ease;
-        }
-        .stButton > button:hover {
-            background-color: #45a049 !important;
+        /* Enhanced Metrics Display */
+        .metric-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
         }
 
-        /* Metric Styles */
-        .metric-container {
-            background-color: #1e1e1e;
+        .metric-card {
+            background-color: #2a2a2a;
             border-radius: 10px;
             padding: 15px;
             text-align: center;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
         }
+
+        .metric-card:hover {
+            transform: scale(1.05);
+            background-color: #3a3a3a;
+        }
+
         .metric-value {
             color: #4CAF50;
             font-size: 1.5em;
             font-weight: bold;
         }
+
         .metric-label {
             color: #a0a0a0;
             font-size: 0.9em;
+            margin-top: 5px;
         }
 
-        /* Spinner and Progress Bar */
-        .stSpinner > div {
-            border-color: #4CAF50 transparent #4CAF50 transparent !important;
+        /* Responsive Design */
+        @media (max-width: 1200px) {
+            .metric-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        /* Expander and Source Styles */
+        .stExpander {
+            background-color: #2a2a2a;
+            border-radius: 10px;
+        }
+
+        /* Search Result Styling */
+        .search-result {
+            background-color: #2a2a2a;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 10px;
+            transition: background-color 0.3s ease;
+        }
+
+        .search-result:hover {
+            background-color: #3a3a3a;
         }
         </style>
         """, unsafe_allow_html=True)
 
-        # Main Application Title with Gradient
+        # Main Application Header
         st.markdown("""
         <div style="background: linear-gradient(135deg, #4CAF50, #2196F3); 
                     -webkit-background-clip: text; 
@@ -293,9 +312,6 @@ Analysis Requirements:
                     margin-bottom: 20px;">
             Finance Intelligence Pro
         </div>
-        """, unsafe_allow_html=True)
-
-        st.markdown("""
         <p style="color: #a0a0a0; text-align: center; margin-bottom: 30px;">
         🚀 AI-Powered Investment Research & Insights
         </p>
@@ -311,7 +327,7 @@ Analysis Requirements:
             )
         
         with col2:
-            st.write(" ") # Spacer
+            st.write("") # Spacer
             analyze_button = st.button("Analyze Stocks", type="primary")
 
         # Analysis Section
@@ -335,39 +351,57 @@ Analysis Requirements:
                     # Price Trend Chart
                     price_chart = self.create_price_trend_chart(ticker)
 
-                    # Display Results
-                    if ai_analysis:
-                        # Key Metrics Display
-                        st.subheader(f"📊 {stock_info['name']} ({stock_info['ticker']}) Analysis")
-                        
-                        # Metrics Columns
-                        metrics_cols = st.columns(4)
-                        metrics_data = [
-                            ("Current Price", f"${stock_info['current_price']}"),
-                            ("Market Cap", stock_info['market_cap']),
-                            ("P/E Ratio", stock_info['pe_ratio']),
-                            ("Dividend Yield", stock_info['dividend_yield'])
-                        ]
-                        
-                        for col, (label, value) in zip(metrics_cols, metrics_data):
-                            col.metric(label, value)
+                    # Display Results with Improved Layout
+                    st.markdown(f"## 📊 {stock_info['name']} ({stock_info['ticker']}) Analysis")
+                    
+                    # Metrics Grid
+                    st.markdown("""
+                    <div class="metric-grid">
+                        <div class="metric-card">
+                            <div class="metric-value">${stock_info['current_price']}</div>
+                            <div class="metric-label">Current Price</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-value">{stock_info['market_cap']}</div>
+                            <div class="metric-label">Market Cap</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-value">{stock_info['pe_ratio']}</div>
+                            <div class="metric-label">P/E Ratio</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-value">{stock_info['dividend_yield']}</div>
+                            <div class="metric-label">Dividend Yield</div>
+                        </div>
+                    </div>
+                    """.format(
+                        stock_info=stock_info
+                    ), unsafe_allow_html=True)
 
-                        # Price Trend Chart
-                        if price_chart:
-                            st.plotly_chart(price_chart, use_container_width=True)
+                    # Price Trend Chart
+                    if price_chart:
+                        st.markdown("## 📈 Price Trend")
+                        st.plotly_chart(price_chart, use_container_width=True)
 
-                        # AI Generated Analysis
-                        st.markdown("### 🤖 AI Insights")
-                        st.write(ai_analysis)
+                    # AI Generated Analysis
+                    st.markdown("## 🤖 AI Insights")
+                    st.markdown(f"""
+                    <div style="background-color: #2a2a2a; border-radius: 10px; padding: 20px; color: #e0e0e0;">
+                    {ai_analysis}
+                    </div>
+                    """, unsafe_allow_html=True)
 
-                        # Web Sources
-                        with st.expander("Sources Consulted"):
-                            for source in search_results:
-                                st.markdown(f"- **{source['title']}** ([Link]({source['link']}))")
+                    # Web Sources with Enhanced Styling
+                    st.markdown("## 🌐 Sources Consulted")
+                    for source in search_results:
+                        st.markdown(f"""
+                        <div class="search-result">
+                            <strong style="color: #4CAF50;">{source['title']}</strong><br>
+                            <a href="{source['link']}" target="_blank" style="color: #2196F3;">View Source</a><br>
+                            <p style="color: #a0a0a0; margin-top: 5px;">{source['snippet']}</p>
+                        </div>
+                        """, unsafe_allow_html=True)
 
-                    else:
-                        st.warning("Could not generate comprehensive analysis.")
-                
                 except Exception as e:
                     st.error(f"Unexpected Error: {e}")
                     st.warning("Please try again with a different stock ticker.")
