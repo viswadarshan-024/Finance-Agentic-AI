@@ -6,6 +6,9 @@ Finance Intelligence Pro is an advanced, AI-powered financial research tool desi
 
 Try it here: [Finance Intelligence Pro](https://finance-agent.streamlit.app/?embed_options=dark_theme)
 
+
+<img src="https://github.com/user-attachments/assets/39257888-07dc-42c2-9131-6d6a5e546ead">
+
 🌟 **Key Features**
 
 * **Comprehensive Stock Analysis:**
